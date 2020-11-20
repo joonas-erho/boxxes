@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor.Build.Content;
 using UnityEngine;
 
-public enum ObjectInFront { NOTHING, WALL, BOX, REFLECTOR_BOX, DOOR, LASER_RECEIVER };
+
 
 public class Detector : MonoBehaviour
 {
@@ -20,8 +20,83 @@ public class Detector : MonoBehaviour
         {
             currentPlateInFront = null;
         }
-    }
 
+        Vector3 position = transform.position;
+        
+
+        switch (parent.dir)
+        {
+            case Direction.LEFT:
+                position.x -= 1f;
+                break;
+            case Direction.RIGHT:
+                position.x += 1f;
+                break;
+            case Direction.UP:
+                position.y += 1f;
+                break;
+            case Direction.DOWN:
+                position.y -= 1f;
+                break;
+        }
+
+        Vector3 bottomCorner = position;
+        bottomCorner.x -= 0.4f;
+        bottomCorner.y -= 0.4f;
+        Vector3 topCorner = position;
+        topCorner.x += 0.4f;
+        topCorner.y += 0.4f;
+
+
+        Collider2D[] hitColliders = Physics2D.OverlapAreaAll(bottomCorner, topCorner);
+
+        if (hitColliders.Length == 0)
+        {
+            obj = ObjectInFront.NOTHING;
+        }
+
+        foreach (var hitCollider in hitColliders)
+        {
+            Debug.Log("Between " + bottomCorner + " and" + topCorner + " there is " + hitCollider);
+
+            parent.blocked = false;
+
+            if (hitCollider.CompareTag("Wall"))
+            {
+                parent.blocked = true;
+            }
+            
+            if (hitCollider.CompareTag("Box"))
+            {
+                parent.blocked = true;
+                currentBoxInFront = hitCollider.transform.gameObject;
+            }
+            
+            if (hitCollider.CompareTag("Reflector Box"))
+            {
+                parent.blocked = true;
+                currentBoxInFront = hitCollider.transform.gameObject;
+            }
+            
+            if (hitCollider.CompareTag("Door") && !hitCollider.GetComponent<Door>().open)
+            {
+                parent.blocked = true;
+            }
+
+            if (hitCollider.CompareTag("Laser"))
+            {
+                currentLaserInFront = hitCollider.transform.gameObject;
+            }
+            else currentLaserInFront = null;
+
+            if (hitCollider.CompareTag("Plate"))
+            {
+                currentPlateInFront = hitCollider.transform.gameObject;
+            }
+            else currentPlateInFront = null;
+        }
+    }
+    /*
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if(collision.CompareTag("Wall"))
@@ -75,5 +150,5 @@ public class Detector : MonoBehaviour
         }
         if (collision.CompareTag("Plate")) currentPlateInFront = null;
         if (collision.CompareTag("Laser")) currentLaserInFront = null;
-    }
+    }*/
 }

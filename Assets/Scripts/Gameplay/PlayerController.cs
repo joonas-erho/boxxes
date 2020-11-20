@@ -4,6 +4,8 @@ using System.IO.MemoryMappedFiles;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+public enum ObjectInFront { NOTHING, WALL, BOX, REFLECTOR_BOX, DOOR, LASER_RECEIVER };
+
 public enum Direction { LEFT, UP, RIGHT, DOWN }
 
 public class PlayerController : MonoBehaviour
@@ -35,6 +37,10 @@ public class PlayerController : MonoBehaviour
     public Sprite holdingBox;
     public Sprite holdingReflectorBox;
 
+    public GameObject currentBoxInFront;
+    public GameObject currentPlateInFront;
+    public GameObject currentLaserInFront;
+
     private void Awake()
     {
         levelManager = FindObjectOfType<LevelManager>();
@@ -51,6 +57,7 @@ public class PlayerController : MonoBehaviour
     private IEnumerator WaitStart()
     {
         yield return new WaitForSeconds(1.40f);
+        CheckCollisions();
         controllable = true;
     }
 
@@ -85,11 +92,11 @@ public class PlayerController : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.G))
         {
-            if(heldBox == null && detector.currentBoxInFront != null)
+            if(heldBox == null && currentBoxInFront != null)
             {
-                heldBox = detector.currentBoxInFront;
-
-                if (detector.currentBoxInFront.CompareTag("Box"))
+                heldBox = currentBoxInFront;
+                
+                if (currentBoxInFront.CompareTag("Box"))
                 {
                     sr.sprite = holdingBox;
                 }
@@ -97,15 +104,17 @@ public class PlayerController : MonoBehaviour
                 
                 heldBox.SetActive(false);
 
-                if (detector.currentLaserInFront != null)
+                if (currentLaserInFront != null)
                 {
-                    detector.currentLaserInFront.GetComponent<Laser>().parent.SpawnLasers();
+                    currentLaserInFront.GetComponent<Laser>().parent.SpawnLasers();
                 }
 
-                if (detector.currentPlateInFront != null)
+                if (currentPlateInFront != null)
                 {
-                    detector.currentPlateInFront.GetComponent<PressurePlate>().Disable();
+                    currentPlateInFront.GetComponent<PressurePlate>().Disable();
                 }
+
+                CheckCollisions();
             }
             else if(heldBox != null && !blocked && !currentlyMoving)
             {
@@ -142,15 +151,17 @@ public class PlayerController : MonoBehaviour
                 heldBox.SetActive(true);
                 heldBox = null;
 
-                if (detector.currentLaserInFront != null)
+                if (currentLaserInFront != null)
                 {
-                    detector.currentLaserInFront.GetComponent<Laser>().parent.SpawnLasers();
+                    currentLaserInFront.GetComponent<Laser>().parent.SpawnLasers();
                 }
 
-                if (detector.currentPlateInFront != null)
+                if (currentPlateInFront != null)
                 {
-                    detector.currentPlateInFront.GetComponent<PressurePlate>().Enable();
+                    currentPlateInFront.GetComponent<PressurePlate>().Enable();
                 }
+
+                CheckCollisions();
             }
         }
 
@@ -273,6 +284,7 @@ public class PlayerController : MonoBehaviour
         if (cf != null)
         cf.Break();
         //yield return new WaitForSeconds(0.05f);
+        CheckCollisions();
         currentlyMoving = false;
         yield return null;
     }
@@ -281,8 +293,86 @@ public class PlayerController : MonoBehaviour
     {
         currentlyMoving = true;
         this.transform.rotation = Quaternion.Euler(0, 0, angle);
+        CheckCollisions();
         yield return new WaitForSeconds(0.15f);       
         currentlyMoving = false;
         yield return null;
+    }
+
+    private void CheckCollisions()
+    {
+        currentBoxInFront = null;
+        currentLaserInFront = null;
+        currentPlateInFront = null;
+        blocked = false;
+
+        Vector3 position = transform.position;
+
+        switch (dir)
+        {
+            case Direction.LEFT:
+                position.x -= 1f;
+                break;
+            case Direction.RIGHT:
+                position.x += 1f;
+                break;
+            case Direction.UP:
+                position.y += 1f;
+                break;
+            case Direction.DOWN:
+                position.y -= 1f;
+                break;
+        }
+
+        Vector3 bottomCorner = position;
+        bottomCorner.x -= 0.4f;
+        bottomCorner.y -= 0.4f;
+        Vector3 topCorner = position;
+        topCorner.x += 0.4f;
+        topCorner.y += 0.4f;
+
+
+        Collider2D[] hitColliders = Physics2D.OverlapAreaAll(bottomCorner, topCorner);
+
+        string info = "Colliding with: ";
+
+        foreach (var hitCollider in hitColliders)
+        {
+            info += hitCollider + " ";
+
+            if (hitCollider.CompareTag("Wall"))
+            {
+                blocked = true;
+            }
+
+            if (hitCollider.CompareTag("Box"))
+            {
+                blocked = true;
+                currentBoxInFront = hitCollider.transform.gameObject;
+            }
+
+            if (hitCollider.CompareTag("Reflector Box"))
+            {
+                blocked = true;
+                currentBoxInFront = hitCollider.transform.gameObject;
+            }
+
+            if (hitCollider.CompareTag("Door") && !hitCollider.GetComponent<Door>().open)
+            {
+                blocked = true;
+            }
+
+            if (hitCollider.CompareTag("Laser"))
+            {
+                currentLaserInFront = hitCollider.transform.gameObject;
+            }
+
+            if (hitCollider.CompareTag("Plate"))
+            {
+                currentPlateInFront = hitCollider.transform.gameObject;
+            }
+        }
+
+        Debug.Log(info);
     }
 }
