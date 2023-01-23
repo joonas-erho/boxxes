@@ -1,4 +1,4 @@
-# boxxes
+# BOXXES
 Pelaa peliä tästä / Play the game here: [Reactor](http://users.jyu.fi/~joalerho/games/reactor/) (Does not work on mobile)
 
 In English below!
