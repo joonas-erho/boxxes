@@ -1,6 +1,5 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.Build.Content;
 using UnityEngine;
 
 public enum ObjectInFront { NOTHING, WALL, BOX, REFLECTOR_BOX, DOOR, LASER_RECEIVER };
