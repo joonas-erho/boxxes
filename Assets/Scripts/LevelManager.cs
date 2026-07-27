@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -25,6 +24,10 @@ public class LevelManager : MonoBehaviour
     {
         fadeAnimator.Play("Fader In");
         yield return new WaitForSeconds(waitTimeBeforeLoadingNextLevel);
+        if (SceneManager.GetActiveScene().buildIndex == 9)
+        {
+            SceneManager.LoadScene(0);
+        }
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
 

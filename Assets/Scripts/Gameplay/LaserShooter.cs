@@ -55,7 +55,7 @@ public class LaserShooter : MonoBehaviour
 
             foreach (var hitCollider in hitColliders)
             {
-                Debug.Log("At: " + checkerPosition + " " + hitCollider);
+                // Debug.Log("At: " + checkerPosition + " " + hitCollider);
 
                 if (hitCollider.CompareTag("Wall"))
                 {
